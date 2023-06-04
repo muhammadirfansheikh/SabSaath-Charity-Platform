@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+   
+</head>
+<body>
+    <h1>Please Wait......</h1>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.js"></script>
+
+
+
+    <script type="text/javascript">
+      //  var a = '<%=System.Configuration.ConfigurationManager.AppSettings["Key"] %>'
+    </script>
+    <script src="https://bankalfalah.gateway.mastercard.com/checkout/version/53/checkout.js"
+            data-error="errorCallback"
+            data-cancel="cancelCallback"
+            data-complete="completeCallback"
+            data-beforeRedirect="getPageState"
+            data-afterRedirect="restorePageState"
+            data-timeout="timeoutCallback">
+    </script>
+
+    <asp:ScriptManager ID="scriptManager1" runat="server" AsyncPostBackTimeout="3600" />
+    <input type="hidden" name="state" id="state" value="" />
+    <input type="hidden" id="orderId" name="orderId" value="" />
+    <input type="hidden" id="sessionId" name="sessionId" value="" runat="server" />
+    <!--<label for="amount">Amount: </label>-->
+
+    <input type="hidden" id="amount" name="amount" value="" runat="server" />
+    <input type="hidden" id="currency" name="currency" value="" runat="server" />
+
+
+
+
+    <br />
+    <br />
+    <br />
+    <br />
+    <input type="button" id="btnPayment" value="Pay with Payment Page" onclick="Checkout.showPaymentPage();" style="display:none" />
+    <script type="text/javascript">
+        $(document).ready(function () {
+            //
+
+            
+            const params = new URL(window.location.href).searchParams;
+
+            var UrL = window.location.href;
+            //////////////////////test////////////////////////
+            // var ciphertext = CryptoJS.AES.encrypt(JSON.stringify(), 'my-secret-key@123').toString();
+            var ciphertext = UrL.split("?")[1];
+            var bytes = CryptoJS.AES.decrypt(ciphertext, 'my-secret-key@123');
+            var decryptedData = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+            //alert(decryptedData)
+            ///////////////////////////////////////////////
+
+            ///////////////////////ok//////////////////////////////////////////
+
+            //var hashes = UrL.split("?")[1];
+            // let decoded = window.atob(hashes);
+            //alert(decoded);
+            let sessionid = decryptedData.split("&")[0].split("=")[1];
+            let getorderid = decryptedData.split("&")[1].split("=")[1];
+            let GetAmount = decryptedData.split("&")[2].split("=")[1];
+            let GetCurrency = decryptedData.split("&")[3].split("=")[1];
+
+            //var localStorage = decryptedData.split("&")[1].split("=")[1];
+            //localStorage.
+
+            localStorage.setItem("gorderid_callback", getorderid);
+            ////////////////////////////////////////////////
+            //$('#sessionId').val(params.get('getsessionid'));
+            //$('#orderId').val(params.get('getorderid'));
+            //$('#amount').val(params.get('GetAmount'));
+            //$('#currency').val(params.get('GetCurrency')); ok
+
+            $('#sessionId').val(sessionid);
+            $('#orderId').val(getorderid);
+            $('#amount').val(GetAmount);
+            $('#currency').val(GetCurrency);
+            $("#btnPayment").trigger("click");
+        });
+
+
+        function errorCallback(error) {
+            // alert("errorCallback function");
+            //console.log(JSON.stringify(error));
+            document.getElementById("state").value = "errorCallback";
+			//window.open("http://localhost:3000/checkout?returnmsg=errorCallback&OrderId-" + localStorage.getItem("gorderid_callback"));
+            window.location.href = "http://localhost:3000/checkout?returnmsg=errorCallback&OrderId-" + localStorage.getItem("gorderid_callback");
+
+        }
+
+        function cancelCallback() {
+            debugger;
+            document.getElementById("state").value = "cancelCallback";
+           // alert(localStorage.getItem("gorderid_callback"));
+		   //window.open("http://localhost:3000/checkout?returnmsg=cancelCallback&OrderId-" + localStorage.getItem("gorderid_callback"));
+            location.href = "http://localhost:3000/checkout?returnmsg=cancelCallback&OrderId-" + localStorage.getItem("gorderid_callback");
+        }
+
+        function timeoutCallback() {
+            //alert("timeoutCallback function");
+            //console.log('Payment timedout');
+            document.getElementById("state").value = "timeoutCallback";
+			 //window.open("http://localhost:3000/checkout?returnmsg=timeoutCallback&OrderId-" + localStorage.getItem("gorderid_callback"));
+           location.href = "http://localhost:3000/checkout?returnmsg=timeoutCallback&OrderId-" + localStorage.getItem("gorderid_callback");
+        }
+
+        function completeCallback(resultIndicator, sessionVersion) {
+            //alert("completeCallback function");
+          window.open("http://localhost:3000/checkout?returnmsg=completeCallback&OrderId-" + localStorage.getItem("gorderid_callback"));
+            //document.getElementById("state").value = "completeCallback";
+            window.location.href = "http://localhost:3000/checkout?returnmsg=completeCallback&OrderId-" + localStorage.getItem("gorderid_callback");
+
+        }
+
+        function getPageState() {
+            // console.log(document.getElementById("state").value);
+            //console.log(document.getElementById("sessionId").value)
+            //alert("getPageState Callback: Leaving server.");
+
+            return {
+
+                orderId: document.getElementById("orderId").value,
+                amount: document.getElementById("amount").value,
+                // key01 : value
+                // key02 : value
+
+            };
+        }
+        
+        function restorePageState(data) {
+            document.getElementById("orderId").value = data.orderId;
+            //alert("restorePageState Callback function called after " + document.getElementById("state").value + " function");
+            //alert("orderId: " + data.orderId + "\n amount: " + data.amount);
+            // data.key01
+            // data.key02
+        }
+
+
+        Checkout.configure({
+
+            merchant: 'ZAMANFOUNDA2',//merhacnt ID
+
+            session: {
+                id: function () {
+                    return document.getElementById("sessionId").value;
+                }
+
+            },
+            
+
+            order: {
+                amount: function () {
+                    return document.getElementById("amount").value;
+                },
+                currency: document.getElementById("currency").value,//'USD',
+                description: 'Donation',
+                id: function () {
+                    return document.getElementById("orderId").value;
+                }
+            },
+
+            interaction: {
+                operation: 'PURCHASE', // set this field to 'PURCHASE' for <<checkout>> to perform a Pay Operation.
+                merchant: {
+                    name: 'SabSaath online Portal',
+                    address: {
+                        line1: '21 Waris Road Lahore',
+                        line2: ''
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+
+</html>
